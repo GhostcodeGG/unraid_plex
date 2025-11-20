@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  plex-monitor:
+    build: .
+    container_name: plex-monitor
+    restart: unless-stopped
+    volumes:
+      # Config file - create this before starting
+      - ./config.json:/app/config.json:ro
+      # Data output directory
+      - ./data:/app/data
+      # Logs
+      - ./logs:/app/logs
+    environment:
+      # Cron schedule (default: every 6 hours)
+      # Format: minute hour day month weekday
+      # Examples:
+      #   "0 */6 * * *"   - Every 6 hours
+      #   "0 0 * * *"     - Daily at midnight
+      #   "0 */12 * * *"  - Every 12 hours
+      #   "0 2 * * *"     - Daily at 2 AM
+      - CRON_SCHEDULE=0 */6 * * *
+      - TZ=America/New_York  # Set your timezone
+    networks:
+      - plex-network
+
+networks:
+  plex-network:
+    driver: bridge

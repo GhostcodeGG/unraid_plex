@@ -1,1 +1,186 @@
-UNRAID Plex
+# Plex Library Monitor
+
+Automated, maintenance-free monitoring system for Unraid Plex servers. Tracks libraries and maintains detailed CSV records with IMDB links.
+
+## Features
+
+- **Automated Monitoring**: Runs on a schedule (default: every 6 hours)
+- **IMDB Integration**: Automatically fetches IMDB IDs and links
+- **Detailed CSV Reports**: Comprehensive metadata for all media
+- **Dockerized**: Easy deployment on Unraid
+- **Maintenance-Free**: Set it and forget it
+- **Multiple Libraries**: Track Movies, TV Shows, and more
+
+## Quick Start
+
+### 1. Get Your Plex Token
+
+Find your Plex token: https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/
+
+### 2. Configure
+
+```bash
+# Copy the example config
+cp config.json.example config.json
+
+# Edit with your details
+nano config.json
+```
+
+Update `config.json`:
+```json
+{
+  "plex_url": "http://YOUR_UNRAID_IP:32400",
+  "plex_token": "YOUR_PLEX_TOKEN",
+  "libraries": ["Movies", "TV Shows"],
+  "output_dir": "./data",
+  "csv_filename": "plex_library_{library}_{date}.csv"
+}
+```
+
+### 3. Deploy with Docker
+
+```bash
+# Build and start
+docker compose up -d
+
+# View logs
+docker compose logs -f plex-monitor
+```
+
+## CSV Output Format
+
+The exported CSV files include:
+
+- **Basic Info**: Title, year, rating, content rating
+- **Metadata**: Genres, directors, actors, studio, summary
+- **Technical**: Duration, file size, resolution, file path
+- **IMDB**: IMDB ID and direct link
+- **Stats**: View count, added date, last viewed date
+- **TV Specific**: Show title, season, episode numbers
+
+## Schedule Configuration
+
+Edit the cron schedule in `docker-compose.yml`:
+
+```yaml
+environment:
+  - CRON_SCHEDULE=0 */6 * * *  # Every 6 hours
+```
+
+Common schedules:
+- `0 */6 * * *` - Every 6 hours (default)
+- `0 0 * * *` - Daily at midnight
+- `0 2 * * *` - Daily at 2 AM
+- `0 */12 * * *` - Every 12 hours
+
+## Output Files
+
+Data is stored in the `./data` directory:
+
+- `plex_library_Movies_YYYYMMDD_HHMMSS.csv` - Timestamped snapshot
+- `plex_library_Movies_latest.csv` - Always current version
+- `plex_library_TV_Shows_YYYYMMDD_HHMMSS.csv` - TV shows snapshot
+- `plex_library_TV_Shows_latest.csv` - Current TV shows
+
+## Manual Run
+
+Run monitoring manually without Docker:
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run once
+python plex_monitor.py
+```
+
+## Unraid Deployment
+
+### Using Docker Compose (Recommended)
+
+1. Install "Docker Compose Manager" plugin in Unraid
+2. Upload this folder to `/mnt/user/appdata/plex-monitor/`
+3. Create your `config.json` file
+4. Run `docker compose up -d` from the folder
+
+### Using Unraid Docker UI
+
+1. Add container with these settings:
+   - Repository: `python:3.11-slim`
+   - Add volume mappings:
+     - `/mnt/user/appdata/plex-monitor/config.json` → `/app/config.json`
+     - `/mnt/user/appdata/plex-monitor/data` → `/app/data`
+   - Command: Build custom image using the Dockerfile
+
+## Troubleshooting
+
+### Can't connect to Plex
+- Verify Plex URL is correct (include http:// and port)
+- Check Plex token is valid
+- Ensure Plex server is accessible from container
+
+### No IMDB links
+- IMDB data comes from Plex metadata agents
+- Use Plex Movie or Plex TV Show agent (not legacy)
+- Refresh metadata for items in Plex
+
+### Permission errors
+- Ensure `data` directory is writable
+- Check file permissions on config.json
+
+## Architecture
+
+```
+plex_monitor.py          # Main monitoring script
+config.json              # Configuration (not committed)
+docker-compose.yml       # Docker orchestration
+Dockerfile               # Container definition
+requirements.txt         # Python dependencies
+data/                    # CSV output directory
+logs/                    # Log files
+```
+
+## Advanced Configuration
+
+### Multiple Library Types
+
+Add any Plex library to the config:
+
+```json
+{
+  "libraries": [
+    "Movies",
+    "TV Shows",
+    "Anime",
+    "4K Movies",
+    "Documentaries"
+  ]
+}
+```
+
+### Custom Output Naming
+
+Customize CSV filename format:
+
+```json
+{
+  "csv_filename": "{library}_backup_{date}.csv"
+}
+```
+
+## Logs
+
+View monitoring logs:
+
+```bash
+# Docker logs
+docker compose logs -f
+
+# Log files
+tail -f logs/plex_monitor.log
+```
+
+## License
+
+MIT License - Free to use and modify
